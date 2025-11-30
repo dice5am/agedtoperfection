@@ -1,0 +1,1008 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>The Rose Estate - Murder Mystery</title>
+    
+    <!-- Web Icon (Favicon) -->
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🌹</text></svg>">
+    
+    <!-- React & ReactDOM -->
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    
+    <!-- Babel for JSX -->
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700&family=Lato:ital,wght@0,300;0,400;1,300&display=swap" rel="stylesheet">
+
+    <!-- Tailwind Config for Custom Colors -->
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        'gold-metallic': '#d4af37',
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        /* Base styles to prevent flash of unstyled content */
+        body {
+            background-color: #0a0505;
+            color: #e8dcca;
+        }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState, useEffect } = React;
+
+        // --- ICONS (Replaced lucide-react with inline SVGs for portability) ---
+        const IconWrapper = ({ children, size = 24, className = "" }) => (
+            <svg 
+                xmlns="http://www.w3.org/2000/svg" 
+                width={size} 
+                height={size} 
+                viewBox="0 0 24 24" 
+                fill="none" 
+                stroke="currentColor" 
+                strokeWidth="2" 
+                strokeLinecap="round" 
+                strokeLinejoin="round" 
+                className={className}
+            >
+                {children}
+            </svg>
+        );
+
+        const ChevronDown = (props) => <IconWrapper {...props}><path d="m6 9 6 6 6-6"/></IconWrapper>;
+        const Search = (props) => <IconWrapper {...props}><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></IconWrapper>;
+        const User = (props) => <IconWrapper {...props}><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></IconWrapper>;
+        const Users = (props) => <IconWrapper {...props}><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></IconWrapper>;
+        const Eye = (props) => <IconWrapper {...props}><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></IconWrapper>;
+        const BookOpen = (props) => <IconWrapper {...props}><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></IconWrapper>;
+        const Fingerprint = (props) => (
+          <IconWrapper {...props}>
+            <path d="M12 10a2 2 0 0 0-2 2c0 1.02-.1 2.51-.26 4" />
+            <path d="M14 13.12c0 2.38 0 6.38-1 8.88" />
+            <path d="M17.29 21.02c.12-.6.43-2.3.5-3.02" />
+            <path d="M2 12a10 10 0 0 1 18-6" />
+            <path d="M2 16h.01" />
+            <path d="M21.8 16c.2-2 .131-5.354 0-6" />
+            <path d="M5 19.5C5.5 18 6 15 6 12a6 6 0 0 1 .34-2" />
+            <path d="M8.65 22c.21-.66.45-1.32.57-2" />
+            <path d="M9 6.8a6 6 0 0 1 9 5.2c0 .47 0 1.17-.02 2" />
+          </IconWrapper>
+        );
+        const Key = (props) => <IconWrapper {...props}><circle cx="7.5" cy="15.5" r="5.5"/><path d="m21 2-9.6 9.6"/><path d="m15.5 7.5 3 3L22 7l-3-3"/></IconWrapper>;
+        const FileText = (props) => <IconWrapper {...props}><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/><polyline points="14 2 14 8 20 8"/><line x1="16" x2="8" y1="13" y2="13"/><line x1="16" x2="8" y1="17" y2="17"/><line x1="10" x2="8" y1="9" y2="9"/></IconWrapper>;
+        const AlertCircle = (props) => <IconWrapper {...props}><circle cx="12" cy="12" r="10"/><line x1="12" x2="12" y1="8" y2="12"/><line x1="12" x2="12.01" y1="16" y2="16"/></IconWrapper>;
+        const Lock = (props) => <IconWrapper {...props}><rect width="18" height="11" x="3" y="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></IconWrapper>;
+        const Unlock = (props) => <IconWrapper {...props}><rect width="18" height="11" x="3" y="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 9.9-1"/></IconWrapper>;
+        
+        // Custom Rose Icon
+        const RoseIcon = (props) => (
+          <IconWrapper {...props}>
+            <path d="M12 2C8 2 6 4 6 7c0 1.5 1 2.5 2 3 .5.25.5 1 0 1.5C6 14 5 15 5 17c0 2 2 3 4 3 1.5 0 3-1 3-2 0 1 1.5 2 3 2 2 0 4-1 4-3 0-2-1-3-3-5.5-.5-.5-.5-1.25 0-1.5 1-.5 2-1.5 2-3 0-2-2-4-6-4z" />
+            <path d="M12 22v-3" />
+            <path d="M12 18c0 0-2-1-3-1" />
+            <path d="M12 16c0 0 2-1 3-1" />
+          </IconWrapper>
+        );
+
+        // --- DATA (UNCHANGED) ---
+
+        const SUSPECTS = [
+          {
+            name: "Adrian Voss",
+            short: "A calm, analytical investor whose quiet presence commands respect.",
+            long: "Adrian partnered with the victim on a wine venture tied to the estate grounds. Though he maintains a measured demeanor, those close to him sense a fracture in that partnership shortly before tonight’s gathering.",
+            motive: "Disagreements over investment control."
+          },
+          {
+            name: "Clara Merrick",
+            short: "A gentle philanthropist known for her kindness and soft-spoken manner.",
+            long: "Clara worked with the victim on a major charity initiative that mysteriously fell apart. She admires Julian Reeves’ charitable influence, often citing him as inspiration.",
+            motive: "Suspicions that her charity mishandled funds the victim blamed her for."
+          },
+          {
+            name: "Emilia Harrow",
+            short: "A razor-sharp businesswoman with a reputation for ruthless efficiency.",
+            long: "She sought a board position connected to The Rose Estate but was denied by the victim. Emilia and Julian Reeves share a complicated dynamic after a public disagreement at a recent gala.",
+            motive: "Professional rivalry mixed with bruised pride."
+          },
+          {
+            name: "Evelyn Wren",
+            short: "A poised socialite from one of the oldest families in the region.",
+            long: "Her estate borders The Rose Estate, and though she and the victim maintained polite relations, an old dispute over land boundaries has lingered for years. Evelyn and Julian Reeves move in the same circles—warm on the surface, quietly competitive underneath.",
+            motive: "Long-standing estate tensions with the victim."
+          },
+          {
+            name: "Julian Reeves",
+            short: "A rising star of high society.",
+            long: "Charming, admired, and frequently splashed across newspaper columns. Julian attended a rare private dinner with the victim days ago, a meeting many have been curious about. Though Julian appears confident tonight, there's a subtle tension behind his smiles.",
+            motive: "None obvious, though the private dinner raised speculation."
+          },
+          {
+            name: "Lila Hart",
+            short: "A celebrated jazz singer known for her haunting voice and mysterious elegance.",
+            long: "Lila often performed private evenings at The Rose Estate, developing a quiet closeness with the victim. She and Julian Reeves share a warm friendship, often seen together at social functions.",
+            motive: "Rumors suggest the victim held private letters from Lila."
+          },
+          {
+            name: "Mae Caldwell",
+            short: "The estate’s longtime housekeeper.",
+            long: "Discreet, perceptive, and quietly commanding. Mae served the victim for over fifteen years and knows more about The Rose Estate than anyone. Her loyalty has always seemed unshakable… until tonight’s tragedy casts a shadow of doubt.",
+            motive: "Hidden personal conflicts with the victim."
+          },
+          {
+            name: "Marlow Finch",
+            short: "A renowned playwright whose sharp wit is matched only by his flair for drama.",
+            long: "The victim once funded Marlow’s production before abruptly withdrawing support, leading to a very public fallout. Julian Reeves later criticized Marlow’s latest show, adding to his frustrations.",
+            motive: "Career sabotage and damaged pride."
+          },
+          {
+            name: "Porter Gray",
+            short: "The estate’s humble groundskeeper.",
+            long: "Loyal, hardworking, and often overlooked by guests. Porter knows every corner of the property and has seen more late-night comings and goings than most realize. He keeps mostly to himself but has a watchful eye.",
+            motive: "Jealousy and long-standing resentment toward high society."
+          },
+          {
+            name: "Rowan Hale",
+            short: "A handsome, confident art collector with a reputation for charm.",
+            long: "Rowan fiercely competed with the victim over a rare painting—an argument several guests witnessed before tonight. He and Julian Reeves share an ambiguous rivalry, tinged with admiration and jealousy.",
+            motive: "A bitter dispute with the victim over a valuable painting."
+          },
+          {
+            name: "Sabine Locke",
+            short: "A masked guest of uncertain origin.",
+            long: "Charming, polished, but offering few details about their past. Sabine claims to be a traveler “from out of town,” yet the victim personally granted them entry tonight. Their connection to Julian Reeves is vague and feels deliberately obscured.",
+            motive: "Unknown history with the victim."
+          },
+          {
+            name: "Samuel Thorne",
+            short: "A nervous banker who handled several accounts for The Rose Estate.",
+            long: "Samuel often appears overwhelmed at glamorous events, though he tries hard to blend in. He’s frequently seen speaking nervously with Julian Reeves at functions.",
+            motive: "Financial irregularities connected to the victim’s accounts."
+          },
+          {
+            name: "Thalia Cross",
+            short: "A bright-eyed aspiring actress.",
+            long: "Delighted simply to be invited to such an elaborate estate gathering. Thalia once auditioned privately for the victim—a meeting she claims was “perfectly professional.” She openly admires Julian Reeves and his charisma.",
+            motive: "Rumored jealousy and failed audition hopes."
+          },
+          {
+            name: "Theo Maren",
+            short: "A quiet traveler who appeared at The Rose Estate seemingly by chance.",
+            long: "Theo speaks little about their past but watches interactions with calm intensity. They’ve been seen observing Julian Reeves more closely than anyone else tonight.",
+            motive: "Unclear, but their presence and connection to Julian raise questions."
+          }
+        ];
+
+        const DETECTIVES = [
+          { name: "The Analyst", short: "Logical, curious, and focused on patterns." },
+          { name: "The Archivist", short: "Remembering details is your secret strength." },
+          { name: "The Charmer", short: "People open up to them easily—they make people feel safe." },
+          { name: "The Doubter", short: "Trusts no one and questions everything." },
+          { name: "The Gossip", short: "People love telling them secrets—and they love hearing them." },
+          { name: "The Inquirer", short: "Curious, direct, and unafraid to ask bold questions." },
+          { name: "The Listener", short: "People tell them things because they make people feel understood." },
+          { name: "The Observer", short: "Quiet, attentive, and excellent at noticing small inconsistencies." },
+          { name: "The Romantic", short: "Focuses on tensions, flirtations, and hidden connections." },
+          { name: "The Shadow", short: "Moves quietly, blending into the background." },
+          { name: "The Socialite", short: "Charming, friendly, and able to get anyone talking." },
+          { name: "The Wanderer", short: "Drifts through the party, overhearing things others miss." }
+        ];
+
+        const EVIDENCE_WAVES = {
+          1: [
+            { type: 'note', title: 'Found Note', content: '“The vineyard projections still do not match the figures you reported. We must speak again.”' },
+            { type: 'note', title: 'Found Note', content: '“Your family’s estate ambitions are becoming unacceptable. The board is not convinced you are ready.”' },
+            { type: 'note', title: 'Found Note', content: '“The charity review on Monday will not be pleasant. Prepare your statements.”' },
+            { type: 'prop', title: 'Crumpled Invitation', content: 'A crumpled invitation to The Rose Estate Gala. On the back, written hastily: “We will discuss your recent behavior privately.”' },
+          ],
+          2: [
+            { type: 'note', title: 'Found Note', content: '“He needs to stop talking before he ruins everything.”' },
+            { type: 'note', title: 'Found Note', content: '“I warned him once. He did not listen.”' },
+            { type: 'note', title: 'Found Note', content: '“Too many eyes on him tonight. A single mistake ends it all.”' },
+            { type: 'prop', title: 'Perfume-Scented Handkerchief', content: 'A handkerchief scented with a distinct, expensive perfume.' },
+          ],
+          3: [
+            { type: 'note', title: 'Staff Statement', content: '“The corridor was occupied at precisely the time you claimed to be elsewhere.”' },
+            { type: 'note', title: 'Kitchen Staff Statement', content: '“The glass was switched earlier in the evening. This was not an impulsive act.”' },
+            { type: 'prop', title: 'Dropped Cufflink', content: 'A rose gold cufflink, engraved subtly with a strange emblem. Found in the east hallway, near the location where Julian’s drink was moved.' },
+          ]
+        };
+
+        const WAVE_PASSWORDS = {
+          1: "ambition",
+          2: "warning",
+          3: "uncover"
+        };
+
+        const WAVE_HINTS = {
+          1: "\"The first traces of deceit have been found.\"",
+          2: "\"The night grows darker, and new secrets emerge.\"",
+          3: "\"The final pieces of the puzzle are within reach.\""
+        };
+
+        // --- SUB-COMPONENTS ---
+
+        const SuspectCard = ({ suspect, isOpen, toggle }) => {
+          return (
+            <div 
+              onClick={toggle}
+              className={`
+                mb-4 rounded-lg border cursor-pointer transition-all duration-300 overflow-hidden shadow-xl backdrop-blur-sm
+                ${isOpen 
+                  ? 'bg-[#2a0505]/70 border-[#d4af37] shadow-[0_0_15px_rgba(212,175,55,0.3)]' 
+                  : 'bg-[#1a0505]/70 border-[#5a1a1a] hover:border-[#8a2a2a]'}
+              `}
+            >
+              <div className="p-5 flex justify-between items-start">
+                <div className="flex-1 pr-4">
+                  <h3 className={`font-serif text-xl mb-1 ${isOpen ? 'text-gold-metallic drop-shadow-md' : 'text-gray-200'}`}>
+                    {suspect.name}
+                  </h3>
+                  <p className="text-gray-400 text-sm italic font-light leading-relaxed">
+                    {suspect.short}
+                  </p>
+                </div>
+                {/* UPDATED CHEVRON LOGIC: Rotate 180 when open */}
+                <div className={`mt-1 text-[#d4af37] transform transition-transform duration-300 ${isOpen ? 'rotate-180' : ''}`}>
+                  <ChevronDown size={20} className="drop-shadow-[0_0_5px_rgba(212,175,55,0.8)]" />
+                </div>
+              </div>
+
+              <div 
+                className={`transition-all duration-300 ease-in-out ${isOpen ? 'max-h-[500px] opacity-100' : 'max-h-0 opacity-0'}`}
+              >
+                <div className="px-5 pb-6 pt-0 border-t border-[#5a1a1a] mt-2 mx-5">
+                  <div className="mt-4">
+                    <h4 className="text-gold-metallic text-xs uppercase tracking-widest font-semibold mb-2 flex items-center gap-2 drop-shadow-sm">
+                      <User size={12} className="text-[#d4af37]" />
+                      Background
+                    </h4>
+                    <p className="text-[#e8dcca] text-sm leading-relaxed font-light font-serif">
+                      {suspect.long}
+                    </p>
+                  </div>
+                  
+                  <div className="mt-5">
+                    <h4 className="text-gold-metallic text-xs uppercase tracking-widest font-semibold mb-2 flex items-center gap-2 drop-shadow-sm">
+                      <Search size={12} className="text-[#d4af37]" />
+                      Possible Motive
+                    </h4>
+                    <p className="text-[#e8dcca] text-sm leading-relaxed font-light italic font-serif">
+                      {suspect.motive}
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          );
+        };
+
+        const DetectiveCard = ({ detective }) => {
+          return (
+            <div className="bg-[#1a0505]/70 backdrop-blur-sm border border-[#3d1818] p-4 rounded-lg text-center flex flex-col items-center justify-center h-full hover:border-[#5a1a1a] transition-all hover:shadow-[0_0_10px_rgba(0,0,0,0.8)] shadow-lg">
+              <div className="w-8 h-8 rounded-full bg-[#2a0f0f] flex items-center justify-center mb-3 border border-[#3d1818] shadow-inner">
+                <Users size={14} className="text-gray-500" />
+              </div>
+              <h3 className="font-serif text-lg text-gold-metallic mb-2 drop-shadow-sm">
+                {detective.name}
+              </h3>
+              <p className="text-gray-400 text-xs leading-relaxed font-light">
+                {detective.short}
+              </p>
+            </div>
+          );
+        };
+
+        const ClueCard = ({ clue }) => (
+          <div className="bg-[#1a0505]/70 backdrop-blur-sm border-l-4 border-[#d4af37] p-4 rounded-r-lg shadow-xl mb-3 animate-fade-in hover:bg-[#2a0a0a]/70 transition-colors relative overflow-hidden group">
+            <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-[#d4af37] to-transparent opacity-5 rounded-full blur-2xl transform translate-x-16 -translate-y-16 group-hover:opacity-10 transition-opacity"></div>
+            <div className="flex items-center gap-2 mb-2 relative z-10">
+              {clue.type === 'note' ? (
+                <FileText size={16} className="text-[#d4af37] opacity-80" />
+              ) : (
+                <AlertCircle size={16} className="text-[#d4af37] opacity-80" />
+              )}
+              <span className="text-gold-metallic text-xs uppercase tracking-widest font-bold">
+                {clue.title}
+              </span>
+            </div>
+            <p className="text-[#e8dcca] text-sm font-serif italic leading-relaxed pl-6 border-l border-[#3d1818] ml-2 relative z-10">
+              {clue.content}
+            </p>
+          </div>
+        );
+
+        // --- ANIMATION COMPONENTS ---
+
+        const BloodEffect = () => {
+          return (
+            <div className="absolute inset-0 z-50 pointer-events-none overflow-hidden rounded-lg">
+              <div className="absolute top-0 left-0 w-full h-2 bg-blood-gradient opacity-90 shadow-md"></div>
+              
+              {/* Realistic Liquid Droplets with distinct splatter timing */}
+              <div className="blood-drip" style={{ left: '15%', animationDuration: '3s', animationDelay: '0.1s' }}></div>
+              <div className="blood-splatter" style={{ left: '12%', animationDelay: '2.8s' }}></div>
+
+              <div className="blood-drip" style={{ left: '35%', animationDuration: '2.5s', animationDelay: '0.8s', width: '10px' }}></div>
+              <div className="blood-splatter" style={{ left: '32%', animationDelay: '3.1s', transform: 'scale(0.8)' }}></div>
+
+              <div className="blood-drip" style={{ left: '55%', animationDuration: '3.2s', animationDelay: '0s', width: '16px' }}></div>
+              <div className="blood-splatter" style={{ left: '51%', animationDelay: '2.9s', transform: 'scale(1.2)' }}></div>
+
+              <div className="blood-drip" style={{ left: '75%', animationDuration: '2.8s', animationDelay: '0.5s' }}></div>
+              <div className="blood-splatter" style={{ left: '72%', animationDelay: '3.1s' }}></div>
+
+              <div className="blood-drip" style={{ left: '90%', animationDuration: '2.9s', animationDelay: '0.3s', width: '11px' }}></div>
+              <div className="blood-splatter" style={{ left: '87%', animationDelay: '3.0s', transform: 'scale(0.9)' }}></div>
+
+              {/* Overall red fade */}
+              <div className="absolute inset-0 bg-[#3d0000] opacity-0 animate-fade-red mix-blend-overlay"></div>
+            </div>
+          );
+        }
+
+        const CameraEffect = () => {
+          return (
+            <div className="absolute inset-0 z-50 pointer-events-none rounded-lg overflow-hidden">
+              <div className="absolute inset-0 bg-white opacity-0 animate-camera-flash-sequence"></div>
+            </div>
+          );
+        }
+
+        const LockScreen = ({ targetPassword, onUnlock, title, subtitle, hint, animationType = 'none' }) => {
+          const [password, setPassword] = useState('');
+          const [error, setError] = useState(false);
+          const [isUnlocking, setIsUnlocking] = useState(false);
+
+          const handleUnlock = () => {
+            if (password.trim().toLowerCase() === targetPassword.toLowerCase()) {
+              
+              // Determine duration based on animation type
+              let duration = 0;
+              if (animationType === 'blood') duration = 3500;
+              if (animationType === 'camera') duration = 2000;
+
+              if (duration > 0) {
+                // FORCE SCROLL TO TOP IMMEDIATELY
+                window.scrollTo(0, 0); 
+                
+                setIsUnlocking(true);
+                setTimeout(() => {
+                  onUnlock();
+                }, duration); 
+              } else {
+                onUnlock();
+              }
+            } else {
+              setError(true);
+              setPassword('');
+            }
+          };
+
+          const handleKeyDown = (e) => {
+            if (e.key === 'Enter') {
+              handleUnlock();
+            }
+          };
+
+          const handleFocus = (e) => {
+            setTimeout(() => {
+                e.target.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            }, 300);
+          };
+
+          return (
+            <div className="animate-fade-in px-4 pt-4 pb-32">
+              <div className={`bg-[#1a0505]/80 backdrop-blur-md border border-[#d4af37] rounded-lg p-8 shadow-2xl relative text-center ring-1 ring-[#d4af37]/30 overflow-hidden ${isUnlocking ? 'border-[#8a0303]' : ''} transition-colors duration-1000`}>
+                <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-[#bf953f] via-[#fcf6ba] to-[#b38728]"></div>
+                
+                {/* ANIMATION OVERLAYS */}
+                {isUnlocking && animationType === 'blood' && <BloodEffect />}
+                {isUnlocking && animationType === 'camera' && <CameraEffect />}
+
+                <Lock size={48} className={`text-[#d4af37] mx-auto mb-6 drop-shadow-[0_0_8px_rgba(212,175,55,0.5)] ${isUnlocking ? 'opacity-0 duration-500' : ''}`} />
+                
+                <h2 className="font-serif text-2xl text-gold-metallic mb-2 tracking-wide drop-shadow-md relative z-10">{title}</h2>
+                <p className="text-[#8a2a2a] text-xs uppercase tracking-widest font-bold mb-6 relative z-10">
+                  {subtitle}
+                </p>
+
+                <p className="text-gray-400 text-sm italic mb-6 font-serif relative z-10">
+                  {hint}
+                </p>
+
+                <div className="space-y-6 w-full relative z-10">
+                  <input
+                    type="text"
+                    placeholder="ENTER PASSWORD"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    onKeyDown={handleKeyDown}
+                    onFocus={handleFocus}
+                    disabled={isUnlocking}
+                    style={{ backgroundColor: 'white', color: 'black' }}
+                    className={`w-full border-2 border-[#d4af37] text-center py-4 px-4 rounded focus:outline-none transition-all duration-300 font-serif font-bold tracking-widest block shadow-[inset_0_2px_4px_rgba(0,0,0,0.3)] ${isUnlocking ? 'opacity-50' : ''}`}
+                  />
+                  
+                  <button
+                    onClick={handleUnlock}
+                    disabled={isUnlocking}
+                    className={`w-full bg-gradient-to-r from-[#bf953f] via-[#d4af37] to-[#b38728] hover:via-[#fcf6ba] text-[#1a0505] font-serif uppercase tracking-[0.2em] text-xs font-bold py-4 rounded shadow-lg transition-all duration-500 transform active:scale-95 block border border-[#fcf6ba]/50 ${isUnlocking ? 'opacity-0 scale-90' : ''}`}
+                  >
+                    {isUnlocking ? 'UNLOCKING...' : 'UNLOCK FILE'}
+                  </button>
+                </div>
+
+                {error && (
+                  <p className="text-red-500 text-xs mt-4 animate-pulse font-bold tracking-wide font-serif">
+                    INCORRECT PASSWORD
+                  </p>
+                )}
+              </div>
+              
+              <div className="h-32"></div>
+            </div>
+          );
+        };
+
+        // --- SECTION VIEWS ---
+
+        const IntroView = () => (
+          <div className="flex flex-col items-center text-center px-6 animate-fade-in pt-8">
+            <div className="space-y-8 max-w-sm relative z-10">
+              <div className="bg-[#1a0505]/80 bg-felt p-6 rounded-lg border border-[#3d1818] shadow-2xl backdrop-blur-sm">
+                <h2 className="font-serif text-3xl text-gold-metallic mb-2 tracking-wide">A Birthday Party</h2>
+                <h3 className="font-serif text-xl text-gray-400 mb-4 tracking-[0.1em] uppercase text-xs">Shrouded in Mystery</h3>
+                <div className="w-16 h-px bg-gradient-to-r from-transparent via-[#d4af37] to-transparent mx-auto opacity-50 mb-4"></div>
+                <p className="text-[#8a2a2a] text-sm italic font-medium font-serif">
+                  Some secrets only get better with time...
+                </p>
+              </div>
+
+              <div className="space-y-6">
+                <p className="text-[#e8dcca] text-sm leading-8 font-light font-serif drop-shadow-sm">
+                  The year is 1927. The city’s elite have gathered at The Rose Estate for a night of wine, whispers and wickedly good company to celebrate Raji’s birthday. But as the clock ticks 7 p.m., a chilling discovery halts the celebration... a guest has been found dead.
+                </p>
+
+                <p className="text-[#e8dcca] text-sm leading-8 font-light font-serif drop-shadow-sm">
+                  The rosé still flows, the music still plays and somewhere in the crowd... the culprit hides. Will you uncover the truth before the night fades to black?
+                </p>
+              </div>
+
+              {/* UPDATED: Cleaner Warning Box */}
+              <div className="bg-[#2a0505] p-6 rounded border border-[#3d1818] shadow-inner">
+                <h4 className="text-gold-metallic text-xs uppercase tracking-[0.2em] mb-2 opacity-90 font-bold text-center">Warning</h4>
+                <p className="text-center italic opacity-90 text-[#e8dcca] font-serif text-sm leading-relaxed">
+                  "Beware, once the night begins, there’s no turning back. Every glance, every whisper, every glass of wine may hold a clue..."
+                </p>
+              </div>
+            </div>
+          </div>
+        );
+
+        const GuestListView = () => {
+          const [activeTab, setActiveTab] = useState('suspects');
+          const [openSuspect, setOpenSuspect] = useState(null);
+
+          const toggleSuspect = (name) => {
+            setOpenSuspect(openSuspect === name ? null : name);
+          };
+
+          return (
+            <div className="animate-fade-in">
+              <div className="flex justify-center mb-8 sticky top-20 z-40">
+                <div className="bg-[#150505]/95 p-1 rounded-full border border-[#d4af37] shadow-[0_4px_20px_rgba(0,0,0,0.5)] flex backdrop-blur-md ring-1 ring-[#d4af37]/30">
+                  <button 
+                    onClick={() => setActiveTab('suspects')}
+                    className={`
+                      px-8 py-2 text-xs uppercase tracking-[0.2em] font-bold transition-all duration-300 rounded-full border
+                      ${activeTab === 'suspects' 
+                        ? 'bg-gradient-to-r from-[#5a1a1a] to-[#3d0f0f] text-[#d4af37] shadow-lg border-[#d4af37]/20' 
+                        : 'text-gray-500 hover:text-[#d4af37] hover:bg-[#2a0a0a] border-transparent'}
+                    `}
+                  >
+                    Suspects
+                  </button>
+                  <button 
+                    onClick={() => setActiveTab('detectives')}
+                    className={`
+                      px-8 py-2 text-xs uppercase tracking-[0.2em] font-bold transition-all duration-300 rounded-full border
+                      ${activeTab === 'detectives' 
+                        ? 'bg-gradient-to-r from-[#5a1a1a] to-[#3d0f0f] text-[#d4af37] shadow-lg border-[#d4af37]/20' 
+                        : 'text-gray-500 hover:text-[#d4af37] hover:bg-[#2a0a0a] border-transparent'}
+                    `}
+                  >
+                    Detectives
+                  </button>
+                </div>
+              </div>
+
+              <div className="min-h-[400px] px-2">
+                {activeTab === 'suspects' ? (
+                  <div className="animate-fade-in space-y-3">
+                    <div className="flex items-center justify-between mb-6 px-2 opacity-80">
+                       <span className="text-[#8a2a2a] text-xs uppercase font-bold tracking-[0.2em] drop-shadow-sm">
+                         {SUSPECTS.length} Suspects Present
+                       </span>
+                       <Eye size={16} className="text-[#8a2a2a]" />
+                    </div>
+                    
+                    {SUSPECTS.map((suspect) => (
+                      <SuspectCard 
+                        key={suspect.name} 
+                        suspect={suspect} 
+                        isOpen={openSuspect === suspect.name}
+                        toggle={() => toggleSuspect(suspect.name)}
+                      />
+                    ))}
+                  </div>
+                ) : (
+                  <div className="animate-fade-in">
+                    <div className="flex items-center justify-between mb-6 px-2 opacity-80">
+                       <span className="text-[#8a2a2a] text-xs uppercase font-bold tracking-[0.2em] drop-shadow-sm">
+                         {DETECTIVES.length} Detectives Assigned
+                       </span>
+                       <Users size={14} className="text-[#8a2a2a]" />
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-3">
+                      {DETECTIVES.map((detective) => (
+                        <DetectiveCard key={detective.name} detective={detective} />
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+          );
+        };
+
+        const EvidenceView = ({ unlockedWaves, onUnlockWave }) => {
+          const [activeWave, setActiveWave] = useState(1);
+
+          return (
+            <div className="animate-fade-in">
+              {/* Wave Tabs */}
+              <div className="flex justify-between mb-8 border-b border-[#3d1818] px-2 sticky top-20 bg-[#0a0505]/95 backdrop-blur-sm z-30 pt-2 shadow-lg">
+                {[1, 2, 3].map((wave) => (
+                  <button
+                    key={wave}
+                    onClick={() => setActiveWave(wave)}
+                    className={`pb-3 text-xs uppercase tracking-[0.2em] transition-all duration-300 flex-1 flex flex-col items-center justify-center gap-1.5 ${
+                      activeWave === wave 
+                        ? 'text-gold-metallic border-b-2 border-[#d4af37] font-bold bg-gradient-to-t from-[#2a0a0a] to-transparent' 
+                        : 'text-gray-600 hover:text-[#d4af37]'
+                    }`}
+                  >
+                    <span>Wave {wave}</span>
+                    {!unlockedWaves[wave] && <Lock size={10} className="opacity-40" />}
+                  </button>
+                ))}
+              </div>
+
+              {/* Content Area */}
+              <div className="px-2 pb-12">
+                {!unlockedWaves[activeWave] ? (
+                  <LockScreen 
+                    title="Evidence Locked"
+                    subtitle={`Wave ${activeWave} Access`}
+                    hint={WAVE_HINTS[activeWave]}
+                    targetPassword={WAVE_PASSWORDS[activeWave]}
+                    onUnlock={() => onUnlockWave(activeWave)}
+                    animationType="camera"
+                  />
+                ) : (
+                  <div className="animate-fade-in">
+                    <div className="flex items-center gap-3 mb-6 opacity-60">
+                       <Fingerprint size={20} className="text-[#d4af37]" />
+                       <span className="text-sm text-gray-400 uppercase tracking-widest">
+                         Evidence Collected
+                       </span>
+                    </div>
+                    
+                    <div className="space-y-4">
+                      {EVIDENCE_WAVES[activeWave].map((clue, index) => (
+                        <ClueCard key={index} clue={clue} />
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+          );
+        };
+
+        const TruthView = () => {
+          return (
+            <div className="animate-fade-in px-4 pb-12 pt-4">
+              <div className="bg-[#1a0505]/80 backdrop-blur-md border border-[#d4af37] rounded-lg p-8 shadow-[0_0_30px_rgba(212,175,55,0.15)] relative overflow-hidden ring-1 ring-[#d4af37]/40">
+                <div className="absolute top-0 left-0 w-full h-1.5 bg-gradient-to-r from-[#bf953f] via-[#fcf6ba] to-[#b38728]"></div>
+                
+                <div className="absolute top-6 right-6 text-[#d4af37] opacity-20">
+                  <Unlock size={24} />
+                </div>
+
+                <div className="text-center mb-10">
+                  <Key size={56} className="text-[#d4af37] mx-auto mb-6 drop-shadow-[0_0_15px_rgba(212,175,55,0.6)]" />
+                  <h2 className="font-serif text-4xl text-gold-metallic mb-3 tracking-wider drop-shadow-md">The Verdict</h2>
+                  <div className="w-24 h-px bg-gradient-to-r from-transparent via-[#d4af37] to-transparent mx-auto opacity-50 mb-8"></div>
+                  <p className="text-[#8a2a2a] font-bold uppercase tracking-[0.3em] text-xs mb-4">The Killer Is</p>
+                  <h3 className="font-serif text-3xl text-gold-metallic tracking-wider mb-6 drop-shadow-lg">Emilia Harrow</h3>
+                  <p className="text-[#e8dcca] text-xs italic font-serif opacity-70">Let us piece together her crime.</p>
+                </div>
+
+                <div className="text-[#e8dcca] text-sm font-light leading-7 space-y-8 font-serif">
+                  
+                  <div className="relative pl-4 border-l border-[#d4af37]/30">
+                    <h4 className="text-gold-metallic text-xs uppercase tracking-[0.2em] mb-2 opacity-90 font-bold">The Motive</h4>
+                    <p className="mb-2 italic text-[#b59e9e] opacity-80">"Emilia feared the rising influence of Julian Reeves — not the victim."</p>
+                    <p>
+                       Julian had knowledge that could ruin her political ambitions and stain her family’s legacy. She prepared poison earlier in the day and intended to slip it into Julian’s drink discreetly.
+                    </p>
+                  </div>
+
+                  <div className="relative pl-4 border-l border-[#d4af37]/30">
+                    <h4 className="text-gold-metallic text-xs uppercase tracking-[0.2em] mb-2 opacity-90 font-bold">The Accident</h4>
+                    <p>
+                      But the plan collapsed. In the confusion of the gala, with glasses moved and guests mingling, the victim accidentally picked up Julian’s drink. A tragic twist — Emilia never meant to kill him.
+                    </p>
+                  </div>
+
+                  <div className="relative pl-4 border-l border-[#d4af37]/30">
+                    <h4 className="text-gold-metallic text-xs uppercase tracking-[0.2em] mb-2 opacity-90 font-bold">The Downfall</h4>
+                    <p>
+                       But Emilia’s downfall came from her own carelessness. She claimed she never left the ballroom… yet a staff member saw someone in the hallway at the exact time Emilia insisted she wasn’t there.
+                    </p>
+                    <p className="mt-2">
+                      And in that very hallway, investigators found a <span className="text-white font-normal border-b border-[#d4af37]/50 shadow-[0_1px_0_rgba(0,0,0,0.5)]">rose gold cufflink engraved with the Harrow emblem</span> — torn from Emilia’s tailored jacket as she hurried away.
+                    </p>
+                  </div>
+
+                  <div className="bg-[#2a0505] p-4 rounded border border-[#3d1818] shadow-inner">
+                    <h4 className="text-gold-metallic text-xs uppercase tracking-[0.2em] mb-2 opacity-90 font-bold text-center">Case Closed</h4>
+                    <p className="text-center italic opacity-90">
+                      The perfume-scented handkerchief, dropped near the scene, matched her signature fragrance. The threatening notes pointed toward silencing Julian. Emilia Harrow acted out of desperation — but the truth remained intact. She is the murderer.
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          );
+        };
+
+        // --- MAIN APP ---
+
+        function MurderMysteryApp() {
+          const [activeSection, setActiveSection] = useState('intro');
+          const [isVerdictUnlocked, setIsVerdictUnlocked] = useState(false);
+          
+          const [unlockedWaves, setUnlockedWaves] = useState({
+            1: false,
+            2: false,
+            3: false
+          });
+
+          useEffect(() => {
+            window.scrollTo({ top: 0, behavior: 'auto' }); 
+          }, [activeSection]);
+
+          const handleUnlockVerdict = () => {
+            setIsVerdictUnlocked(true);
+            setActiveSection('truth');
+          };
+
+          const handleUnlockWave = (waveNumber) => {
+            setUnlockedWaves(prev => ({
+              ...prev,
+              [waveNumber]: true
+            }));
+            window.scrollTo({ top: 0, behavior: 'auto' });
+          };
+
+          const renderSection = () => {
+            switch (activeSection) {
+              case 'intro': return <IntroView />;
+              case 'guests': return <GuestListView />;
+              case 'evidence': return (
+                <EvidenceView 
+                  unlockedWaves={unlockedWaves} 
+                  onUnlockWave={handleUnlockWave} 
+                />
+              );
+              case 'unlock': return (
+                <LockScreen 
+                  title="Restricted Access"
+                  subtitle="The Final Verdict"
+                  hint="&quot;Only those who have solved the mystery may proceed.&quot;"
+                  targetPassword="emilia"
+                  onUnlock={handleUnlockVerdict}
+                  animationType="blood" 
+                />
+              );
+              case 'truth': return <TruthView />;
+              default: return <GuestListView />;
+            }
+          };
+
+          const getTitle = () => {
+            switch (activeSection) {
+              case 'intro': return 'Introduction';
+              case 'guests': return 'Guest List';
+              case 'evidence': return 'Case Files';
+              case 'unlock': return 'Restricted';
+              case 'truth': return 'The Verdict';
+              default: return 'The Rose Estate';
+            }
+          };
+
+          return (
+            <div className="min-h-screen bg-[#0a0505] text-[#e8dcca] font-sans selection:bg-[#d4af37] selection:text-black flex flex-col bg-felt">
+              {/* GLOBAL CSS Styles for Texture & Metallic Effects */}
+              <style>{`
+                
+                .font-serif { font-family: 'Cinzel', serif; }
+                .font-sans { font-family: 'Lato', sans-serif; }
+                
+                .animate-fade-in { animation: fadeIn 0.6s ease-out forwards; }
+                @keyframes fadeIn { 
+                  from { opacity: 0; transform: translateY(15px); } 
+                  to { opacity: 1; transform: translateY(0); } 
+                }
+                
+                .pb-safe { padding-bottom: env(safe-area-inset-bottom); }
+
+                /* FELT TEXTURE */
+                .bg-felt {
+                  background-color: #1a0505;
+                  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)' opacity='0.15'/%3E%3C/svg%3E");
+                }
+
+                /* METALLIC GOLD TEXT */
+                .text-gold-metallic {
+                  background: linear-gradient(to bottom, #cfc09f 22%, #d4af37 24%, #cfc09f 26%, #cfc09f 27%, #ffecb3 40%, #b38728 78%); 
+                  -webkit-background-clip: text;
+                  -webkit-text-fill-color: transparent;
+                  color: #d4af37;
+                  text-shadow: 0px 1px 1px rgba(0,0,0,0.3);
+                }
+
+                /* BLOOD DRIP ANIMATION */
+                .bg-blood-gradient {
+                  background: linear-gradient(to bottom, #4a0000, #8a0303);
+                }
+
+                .blood-drip {
+                  position: absolute;
+                  top: 0;
+                  width: 14px;
+                  height: 14px;
+                  background: radial-gradient(circle at 35% 25%, #cc0000, #8a0303, #4a0000);
+                  box-shadow: 2px 2px 4px rgba(0,0,0,0.6), inset 2px 2px 4px rgba(255,255,255,0.2);
+                  border-radius: 0 50% 50% 50%;
+                  transform: rotate(45deg);
+                  opacity: 0.95;
+                  animation: drip-hang-fall 3.5s ease-in forwards;
+                  transform-origin: center top;
+                }
+
+                @keyframes drip-hang-fall {
+                  0% {
+                    top: 0;
+                    height: 14px;
+                    border-radius: 50%;
+                    transform: scale(1);
+                  }
+                  15% {
+                    /* Pooling/Hanging start */
+                    top: 5px;
+                    height: 18px;
+                    border-radius: 50% 50% 45% 45%;
+                    transform: scaleX(1.1);
+                  }
+                  30% {
+                     /* Heavy hanging, forming neck */
+                     top: 15px;
+                     height: 25px;
+                     border-radius: 45% 45% 30% 30%;
+                     transform: scaleX(0.9);
+                   }
+                  40% {
+                     /* Break free */
+                     top: 25px;
+                     height: 22px;
+                     border-radius: 0 50% 50% 50%; /* Tear shape */
+                     transform: rotate(45deg) scale(1.1);
+                   }
+                  90% {
+                     /* Falling */
+                     top: 92%;
+                     height: 22px;
+                     border-radius: 0 50% 50% 50%;
+                     transform: rotate(45deg) scale(1.1);
+                     opacity: 1;
+                   }
+                  95% {
+                     /* Splatter Morph */
+                     top: 96%;
+                     height: 8px;
+                     width: 25px;
+                     border-radius: 50%;
+                     transform: rotate(0deg) scaleX(1.5);
+                     opacity: 0.8;
+                   }
+                  100% {
+                     top: 98%;
+                     opacity: 0;
+                   }
+                }
+
+                /* Splatter effect */
+                .blood-splatter {
+                  position: absolute;
+                  bottom: 2%; /* Land near bottom */
+                  width: 50px;
+                  height: 20px;
+                  background: radial-gradient(ellipse at center, #8a0303 0%, #4a0000 70%, transparent 100%);
+                  border-radius: 50%;
+                  opacity: 0;
+                  transform: scale(0);
+                  animation: splatter 0.6s ease-out forwards;
+                }
+
+                @keyframes splatter {
+                  0% {
+                    opacity: 1;
+                    transform: scale(0);
+                  }
+                  40% {
+                    opacity: 0.9;
+                    transform: scale(1.3) rotate(5deg);
+                  }
+                  100% {
+                    opacity: 0;
+                    transform: scale(2) rotate(-5deg);
+                  }
+                }
+                
+                @keyframes fadeRed {
+                  0% { opacity: 0; }
+                  50% { opacity: 0.4; }
+                  100% { opacity: 0; }
+                }
+                .animate-fade-red { animation: fadeRed 3.5s ease-in-out forwards; }
+
+                /* CAMERA FLASH SEQUENCE */
+                @keyframes flashSequence {
+                  0% { opacity: 0; }
+                  5% { opacity: 1; } /* Flash 1 */
+                  10% { opacity: 0; }
+                  
+                  35% { opacity: 0; }
+                  40% { opacity: 1; } /* Flash 2 */
+                  45% { opacity: 0; }
+                  
+                  70% { opacity: 0; }
+                  75% { opacity: 1; } /* Flash 3 */
+                  100% { opacity: 0; }
+                }
+                .animate-camera-flash-sequence { animation: flashSequence 2s ease-out forwards; }
+              `}</style>
+
+              {/* Decorative Header Background */}
+              <div className="fixed top-0 left-0 w-full h-48 bg-gradient-to-b from-[#2a0505] via-[#1a0505]/80 to-transparent pointer-events-none z-0 opacity-80"></div>
+              
+              {/* Main Container */}
+              <div className="relative z-10 max-w-md mx-auto w-full flex-grow flex flex-col">
+                
+                {/* Top Header */}
+                <header className="text-center pt-4 pb-3 px-4 sticky top-0 bg-[#0a0505]/95 backdrop-blur-md z-50 border-b border-[#2a0a0a] shadow-[0_4px_30px_rgba(0,0,0,0.6)]">
+                  <div className="flex justify-center items-center gap-2 mb-1 border-b border-[#d4af37] pb-1 px-4 inline-flex">
+                    <RoseIcon size={12} className="text-[#8a2a2a]" />
+                    <span className="text-[#8a2a2a] text-[10px] uppercase tracking-[0.4em] font-bold">Murder Mystery</span>
+                    <RoseIcon size={12} className="text-[#8a2a2a]" />
+                  </div>
+                  <h1 className="font-serif text-3xl text-gold-metallic tracking-wide drop-shadow-[0_0_15px_rgba(212,175,55,0.4)]">
+                    The Rose Estate
+                  </h1>
+                  <p className="text-[#8a2a2a] text-xs uppercase tracking-[0.3em] font-semibold mt-1 opacity-80">
+                    {getTitle()}
+                  </p>
+                </header>
+
+                {/* Dynamic Content Area */}
+                <main className="flex-grow px-4 py-6 pb-24">
+                  {renderSection()}
+                </main>
+
+                {/* Bottom Navigation Bar */}
+                <nav className="fixed bottom-0 left-0 w-full bg-[#150505] border-t border-[#3d1818] z-50 pb-safe shadow-[0_-5px_20px_rgba(0,0,0,0.8)]">
+                  {/* Brass Rail Effect */}
+                  <div className="absolute top-0 left-0 w-full h-[1px] bg-gradient-to-r from-[#5a1a1a] via-[#d4af37] to-[#5a1a1a] opacity-60"></div>
+                  
+                  <div className="max-w-md mx-auto flex justify-around items-center h-20 px-2">
+                    
+                    <button 
+                      onClick={() => setActiveSection('intro')}
+                      className={`flex flex-col items-center justify-center w-16 h-full transition-all duration-300 ${
+                        activeSection === 'intro' ? 'text-gold-metallic transform -translate-y-1' : 'text-gray-600 hover:text-[#d4af37]'
+                      }`}
+                    >
+                      <BookOpen size={22} className={activeSection === 'intro' ? 'drop-shadow-[0_0_8px_rgba(212,175,55,0.6)]' : ''} />
+                      <span className="text-[9px] uppercase tracking-wider font-bold mt-1">Intro</span>
+                    </button>
+
+                    <button 
+                      onClick={() => setActiveSection('guests')}
+                      className={`flex flex-col items-center justify-center w-16 h-full transition-all duration-300 ${
+                        activeSection === 'guests' ? 'text-gold-metallic transform -translate-y-1' : 'text-gray-600 hover:text-[#d4af37]'
+                      }`}
+                    >
+                      <Users size={22} className={activeSection === 'guests' ? 'drop-shadow-[0_0_8px_rgba(212,175,55,0.6)]' : ''} />
+                      <span className="text-[9px] uppercase tracking-wider font-bold mt-1">Guests</span>
+                    </button>
+
+                    <button 
+                      onClick={() => setActiveSection('evidence')}
+                      className={`flex flex-col items-center justify-center w-16 h-full transition-all duration-300 ${
+                        activeSection === 'evidence' ? 'text-gold-metallic transform -translate-y-1' : 'text-gray-600 hover:text-[#d4af37]'
+                      }`}
+                    >
+                      <Fingerprint size={22} className={activeSection === 'evidence' ? 'drop-shadow-[0_0_8px_rgba(212,175,55,0.6)]' : ''} />
+                      <span className="text-[9px] uppercase tracking-wider font-bold mt-1">Clues</span>
+                    </button>
+
+                    {/* Dynamic Button */}
+                    {!isVerdictUnlocked ? (
+                      <button 
+                        onClick={() => setActiveSection('unlock')}
+                        className={`flex flex-col items-center justify-center w-16 h-full transition-all duration-300 ${
+                          activeSection === 'unlock' ? 'text-gold-metallic transform -translate-y-1' : 'text-gray-600 hover:text-[#d4af37]'
+                        }`}
+                      >
+                        <Lock size={22} className={activeSection === 'unlock' ? 'drop-shadow-[0_0_8px_rgba(212,175,55,0.6)]' : ''} />
+                        <span className="text-[9px] uppercase tracking-wider font-bold mt-1">Hidden</span>
+                      </button>
+                    ) : (
+                      <button 
+                        onClick={() => setActiveSection('truth')}
+                        className={`flex flex-col items-center justify-center w-16 h-full transition-all duration-300 ${
+                          activeSection === 'truth' ? 'text-gold-metallic transform -translate-y-1' : 'text-gray-600 hover:text-[#d4af37]'
+                        }`}
+                      >
+                        <Key size={22} className={`mb-1 ${activeSection === 'truth' ? 'drop-shadow-[0_0_8px_rgba(212,175,55,0.6)] text-[#d4af37]' : ''}`} />
+                        <span className={activeSection === 'truth' ? 'text-[9px] uppercase tracking-wider font-bold mt-1 text-[#d4af37]' : 'text-[9px] uppercase tracking-wider font-bold mt-1'}>Truth</span>
+                      </button>
+                    )}
+
+                  </div>
+                </nav>
+
+              </div>
+            </div>
+          );
+        }
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<MurderMysteryApp />);
+    </script>
+</body>
+</html>
